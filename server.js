@@ -20,7 +20,7 @@ app.locals.config = config;
 app.locals.settings = settings;
 
 _ = require('underscore');
-io = require('socket.io');
+io = require('socket.io').listen(config.wsPort);
 moment = require('moment');
 spark = require('sparknode');
 core = new spark.Core(settings.sparkCore);
@@ -31,11 +31,11 @@ game = {};
 player = {};
 
 // Setup socketio
-io = io.listen(config.wsPort);
+//io = io.listen(config.wsPort);
 console.log(chalk.green('Websocket Server: Listening on port ' + config.wsPort));
 
 io.configure(function() {
-    io.set('log level', 2);
+    io.set('log level', 3);
 });
 
 app.get('/', function(req, res) {
@@ -44,7 +44,7 @@ app.get('/', function(req, res) {
     delete require.cache[path.resolve('./versions/css.json')];
     
     res.render('home.jade', {
-        title: 'Ping Pong',
+        title: 'Showbie Ping Pong',
         metaDesc: 'Ping Pong',
         JSVersions: require('./versions/js'),
         CSSVersions: require('./versions/css')
@@ -67,7 +67,7 @@ game = new gameController();
 
 game.feelersPingReceived();
 
-io.sockets.on('connection', function(client) {
+io.on('connection', function(client) {
     game.reset();
     game.clientJoined();
     cardReader.connectionStatus();
@@ -92,9 +92,11 @@ cardReader.on('read', function(data) {
 cardReader.on('err', game.cardReadError);
 
 cardReader.on('connect', function() {
-    io.sockets.emit('cardReader.connect');
+    console.log('Connect call');
+    io.emit('cardReader.connect');
 });
 
 cardReader.on('disconnect', function() {
-    io.sockets.emit('cardReader.disconnect');
+    console.log('Disconnect call');
+    io.emit('cardReader.disconnect');
 });
